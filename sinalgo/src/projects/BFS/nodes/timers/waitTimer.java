@@ -1,7 +1,7 @@
 package projects.BFS.nodes.timers;
 
+import projects.BFS.nodes.nodeImplementations.BFSNode;
 import projects.DFS.nodes.messages.DFSMessage;
-import projects.DFS.nodes.nodeImplementations.DFSNode;
 import sinalgo.nodes.Node;
 import sinalgo.nodes.timers.Timer;
 
@@ -11,7 +11,7 @@ public class waitTimer extends Timer {
 		this.D=D;
 	}
 	public void fire() {
-		DFSNode n= (DFSNode) this.node;
+		BFSNode n= (BFSNode) this.node;
 		n.send(new DFSMessage(this.node),this.D);
 	}
 
