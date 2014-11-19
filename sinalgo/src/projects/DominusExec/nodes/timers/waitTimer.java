@@ -1,7 +1,7 @@
 package projects.DominusExec.nodes.timers;
 
-import projects.StabTD.nodes.messages.stabMessage;
-import projects.StabTD.nodes.nodeImplementations.stabNode;
+import projects.DominusExec.nodes.messages.dominusExecMessage;
+import projects.DominusExec.nodes.nodeImplementations.dominusExecNode;
 import sinalgo.nodes.Node;
 import sinalgo.nodes.timers.Timer;
 
@@ -11,8 +11,8 @@ public class waitTimer extends Timer {
 		this.D=D;
 	}
 	public void fire() {
-		stabNode n= (stabNode) this.node;
-		n.send(new stabMessage(this.node, n.val),this.D);
+		dominusExecNode n= (dominusExecNode) this.node;
+		n.send(new dominusExecMessage(this.node, n.val),this.D);
 	}
 
 }

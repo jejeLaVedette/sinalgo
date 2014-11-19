@@ -5,8 +5,8 @@ import java.awt.Graphics;
 import java.util.Iterator;
 import java.util.Random;
 
-import projects.StabTD.nodes.messages.stabMessage;
-import projects.StabTD.nodes.timers.initTimer;
+import projects.DominusExec.nodes.messages.dominusExecMessage;
+import projects.DominusExec.nodes.timers.initTimer;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.gui.transformation.PositionTransformation;
 import sinalgo.nodes.Node;
@@ -27,6 +27,8 @@ public class dominusExecNode extends Node {
 	public boolean jeton=false;
 	public Status etat=Status.dehors;
 	public int tabVoisin[];
+	
+	private int etatD; //0 = dominant, 1 = domine
 
 	public void preStep() {}
 
@@ -36,7 +38,7 @@ public class dominusExecNode extends Node {
 
 	public void init() {
 		(new initTimer()).startRelative(1, this);
-
+		etatD=1;
 	}
 
 	// Lorsque le timer pr�c�dent expire, la fonction start est appel�e
@@ -45,7 +47,7 @@ public class dominusExecNode extends Node {
 	public void start(){
 		Random ran = new Random();
 		val = ran.nextInt(20);
-		this.broadcast(new stabMessage(this, val));
+		this.broadcast(new dominusExecMessage(this, val));
 	}
 
 	// Cette fonction g�re la r�ception de message
@@ -56,34 +58,62 @@ public class dominusExecNode extends Node {
 		while(inbox.hasNext())
 		{
 			Message m=inbox.next();
-			if(m instanceof stabMessage) 
-			{	
-				this.val = (Math.min(this.val, ((stabMessage) m).val)); 	
+			if(m instanceof dominusExecMessage) 
+			{	//leave
+				if(etatD==0){
+					if(!plusPetit()&&petitDomine()){
+						etatD=1; //domine
+					}
+				} else if(etatD==1){ //join
+					if(plusPetit()){
+						etatD=0; //dominant
+					} else if(tousDomine()){
+						etatD=0;
+					}
+				}
 			}
 		}
 		this.val = (this.val + 1) % (2 * Tools.getNodeList().size() + 1) ;
-		this.broadcast(new stabMessage(this, val));
+		this.broadcast(new dominusExecMessage(this, val));
 	}
 
-
-
-	public dominusExecNode Droite(){
-		for(Edge e : this.outgoingConnections)
-			if(e.endNode.ID==this.ID%Tools.getNodeList().size()+1)
-				return (dominusExecNode) e.endNode;
-		return null;
-	}	
-
-	public dominusExecNode Gauche(){
-		for(Edge e : this.outgoingConnections)
-			if(e.endNode.ID!=this.ID%Tools.getNodeList().size()+1)
-				return (dominusExecNode) e.endNode;
-		return null;
-	}	
-
-
-	public void demande(){
-		this.etat=Status.demandeur;
+	public boolean plusPetit(){
+		boolean isPetit = true;
+		Iterator<Edge> edgeIter = this.outgoingConnections.iterator();
+		for(int i=1; i <= this.outgoingConnections.size() ;i++){
+			isPetit = isPetit&&(this.ID==Math.min(this.ID, edgeIter.next().getID()));
+		}
+		return isPetit;
+	}
+	
+	public boolean tousDomine(){
+		boolean isDomine = true;
+		Iterator<Edge> edgeIter = this.outgoingConnections.iterator();
+		for(int i=1; i <= this.outgoingConnections.size() ;i++){
+			isDomine = isDomine && (((dominusExecNode) (edgeIter.next().endNode)).getEtatD()==0);
+		}
+		return isDomine;
+	}
+	
+	public boolean petitDomine(){
+		boolean isPetitDomine = true;
+		Iterator<Edge> edgeIter = this.outgoingConnections.iterator();
+		int idPetit;
+		idPetit=(int) edgeIter.next().getID();
+		for(int i=2; i <= this.outgoingConnections.size() ;i++){
+			idPetit=Math.min(idPetit, (int) edgeIter.next().getID());
+		}
+		for(int i=1; i <= this.outgoingConnections.size() ;i++){
+			Edge voisin = edgeIter.next();
+			if(idPetit==voisin.getID()){
+				isPetitDomine = ((dominusExecNode)voisin.endNode).getEtatD()==0;
+			}
+		}		
+		return isPetitDomine;
+	}
+	
+	public int getEtatD(){
+		return this.etatD;
 	}
 
 	public void neighborhoodChange() {}
@@ -91,18 +121,10 @@ public class dominusExecNode extends Node {
 	public void checkRequirements() throws WrongConfigurationException {}
 
 	public Color Couleur(){
-		if(this.val % 6 == 0){
+		if(this.etatD == 0){
 			return Color.RED;
-		}else if(this.val % 6 == 1){
+		}else if(this.etatD == 1){
 			return Color.BLUE;
-		}else if(this.val % 6== 2){
-			return Color.YELLOW;
-		}else if(this.val % 6 == 3){
-			return Color.BLACK;
-		}else if(this.val % 6 == 4){
-			return Color.GRAY;
-		}else if(this.val % 6 == 5){
-			return Color.PINK;
 		}
 		return Color.GREEN;
 	}
